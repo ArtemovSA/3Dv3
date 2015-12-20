@@ -47,8 +47,8 @@ for i = 1:count-1
     plot3(handle_in, N(:,1),N(:,2),N(:,3),'Linewidth',2);
 end
     
-XData =(XYZ(1,start_point:end_point,1));
-YData =(XYZ(1,start_point:end_point,2));
-ZData =(XYZ(1,start_point:end_point,3));
+XData =(XYZ(beat_n,start_point:end_point,1));
+YData =(XYZ(beat_n,start_point:end_point,2));
+ZData =(XYZ(beat_n,start_point:end_point,3));
 scatter3(handle_in, XData,YData,ZData,'fill');
 hold(handle_in,'off');

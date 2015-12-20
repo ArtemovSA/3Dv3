@@ -22,7 +22,7 @@ function varargout = view_main(varargin)
 
 % Edit the above text to modify the response to help view_main
 
-% Last Modified by GUIDE v2.5 06-Dec-2015 19:40:44
+% Last Modified by GUIDE v2.5 19-Dec-2015 17:16:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -93,17 +93,11 @@ function set_params
     sel_row = 1;
     move_val = 1;
 
-    xlabel(hand.axes6,'X');
-    ylabel(hand.axes6,'Z');
-    xlabel(hand.axes4,'X');
-    ylabel(hand.axes4,'Y');
-    xlabel(hand.axes5,'Y');
-    ylabel(hand.axes5,'Z');
-    xlabel(hand.axes2,'X');
-    ylabel(hand.axes2,'Y');
-    zlabel(hand.axes2,'Z');
+    xlabel(hand.axes_preview,'X');
+    ylabel(hand.axes_preview,'Y');
+    zlabel(hand.axes_preview,'Z');
 
-    view(hand.axes2,-60,60);
+    view(hand.axes_preview,-60,60);
     
 %function mouseMove (object, eventdata)
 %    global hand;
@@ -125,37 +119,24 @@ function replot
     
     if ((get(hand.checkbox1,'value') == 1) && (get(hand.checkbox2,'value') == 1))
         
-        cla(hand.axes2);
-        cla(hand.axes4);
-        cla(hand.axes5);
-        cla(hand.axes6);
-    
-        hold(hand.axes2,'on');
-        hold(hand.axes4,'on');
-        hold(hand.axes5,'on');
-        hold(hand.axes6,'on');
+        cla(hand.axes_preview);
+        hold(hand.axes_preview,'on');
 
         plot_axes_part (hand.axes_part);
         
         for i = 1:Count_beats
             if (data_table(i) == 1)
-              switch (get(get(hand.uipanel7,'SelectedObject'),'Tag'))
+              switch (get(get(hand.uipanel_preview,'SelectedObject'),'Tag'))
                 case 'Part_chbox' %Part plot
-                    plot3(hand.axes2,XYZ_win(i,left_pos:left_pos+move_val,1),XYZ_win(i,left_pos:left_pos+move_val,2),XYZ_win(i,left_pos:left_pos+move_val,3),'color',beat_color(i,:));
+                    plot3(hand.axes_preview,XYZ_win(i,left_pos:left_pos+move_val,1),XYZ_win(i,left_pos:left_pos+move_val,2),XYZ_win(i,left_pos:left_pos+move_val,3),'color',beat_color(i,:),'Linewidth',2);
                 case 'All_chbox'
-                    plot3(hand.axes2,XYZ_win(i,:,1),XYZ_win(i,:,2),XYZ_win(i,:,3),'color',beat_color(i,:));
+                    plot3(hand.axes_preview,XYZ_win(i,:,1),XYZ_win(i,:,2),XYZ_win(i,:,3),'color',beat_color(i,:),'Linewidth',2);
               end
-                plot(hand.axes4, XYZ_win(i,left_pos:left_pos+move_val,1),XYZ_win(i,left_pos:left_pos+move_val,2),'color',beat_color(i,:),'LineWidth',1);
-                plot(hand.axes5, XYZ_win(i,left_pos:left_pos+move_val,2),XYZ_win(i,left_pos:left_pos+move_val,3),'color',beat_color(i,:),'LineWidth',1);
-                plot(hand.axes6, XYZ_win(i,left_pos:left_pos+move_val,1),XYZ_win(i,left_pos:left_pos+move_val,3),'color',beat_color(i,:),'LineWidth',1);
             end
         end
 
-        hold(hand.axes2,'off');
-        hold(hand.axes4,'off');
-        hold(hand.axes5,'off');
-        hold(hand.axes6,'off');
-        view(hand.axes2,-60,60);
+        hold(hand.axes_preview,'off');
+        view(hand.axes_preview,-60,60);
     end
     
     plot_axes_main(hand.axes_main, get(hand.popupmenu1,'value'), 1);
@@ -369,26 +350,16 @@ function pushbutton2_Callback(hObject, eventdata, handles)
     
     plot_axes_main(hand.axes_main, get(hand.popupmenu1,'value'), 1);
     
-    cla(hand.axes2);
-
-    hold(hand.axes2,'on');
-    hold(hand.axes4,'on');
-    hold(hand.axes5,'on');
-    hold(hand.axes6,'on');
+    cla(hand.axes_preview);
+    hold(hand.axes_preview,'on');
     
     for i=1:Count_beats
         if (data_table(i) == 1)
-            plot3(hand.axes2,XYZ_in(i,win_left:win_right,1), XYZ_in(i,win_left:win_right,2), XYZ_in(i,win_left:win_right,3),'color',beat_color(i,:),'LineWidth',1);
-            plot(hand.axes4, XYZ_in(i,win_left:win_right,1), XYZ_in(i,win_left:win_right,2),'color',beat_color(i,:),'LineWidth',1);
-            plot(hand.axes5, XYZ_in(i,win_left:win_right,2), XYZ_in(i,win_left:win_right,3),'color',beat_color(i,:),'LineWidth',1);
-            plot(hand.axes6, XYZ_in(i,win_left:win_right,1), XYZ_in(i,win_left:win_right,3),'color',beat_color(i,:),'LineWidth',1);
-        end
+            plot3(hand.axes_preview,XYZ_in(i,win_left:win_right,1), XYZ_in(i,win_left:win_right,2), XYZ_in(i,win_left:win_right,3),'color',beat_color(i,:),'LineWidth',1);
+       end
     end
 
-    hold(hand.axes2,'off');
-    hold(hand.axes4,'off');
-    hold(hand.axes5,'off');
-    hold(hand.axes6,'off');
+    hold(hand.axes_preview,'off');
     
     XYZ_win = XYZ_in(1:Count_beats,win_left:win_right,1:3);
 
@@ -492,32 +463,19 @@ function pushbutton6_Callback(hObject, eventdata, handles)
     plot(hand.axes_part, filter_y,'Color','green','LineWidth',1);
     plot(hand.axes_part, filter_z,'Color','blue','LineWidth',1);
     hold(hand.axes_part,'off');
+
+    cla(hand.axes_preview); 
     
-    cla(hand.axes4);
-    cla(hand.axes5);
-    cla(hand.axes6); 
-    cla(hand.axes2); 
-    
-    hold(hand.axes2,'on');
-    hold(hand.axes4,'on');
-    hold(hand.axes5,'on');
-    hold(hand.axes6,'on');
+    hold(hand.axes_preview,'on');
     
     for (i = 1:10)
         filter_x = filter(h, XYZ_in(1,left_pos:right_pos,1));
         filter_y = filter(h, XYZ_in(1,left_pos:right_pos,2));
         filter_z = filter(h, XYZ_in(1,left_pos:right_pos,3));
-        plot3(hand.axes2,filter_x, filter_y, filter_z,'color',rand(1,3),'LineWidth',1);
-        plot(hand.axes4, filter_x, filter_y,'color',rand(1,3),'LineWidth',1);
-        plot(hand.axes5, filter_y, filter_z,'color',rand(1,3),'LineWidth',1);
-        plot(hand.axes6, filter_x, filter_z,'color',rand(1,3),'LineWidth',1);
-        
+        plot3(hand.axes_preview,filter_x, filter_y, filter_z,'color',rand(1,3),'LineWidth',1);
     end
        
-    hold(hand.axes2,'off');
-    hold(hand.axes4,'off');
-    hold(hand.axes5,'off');
-    hold(hand.axes6,'off');
+    hold(hand.axes_preview,'off');
 
 
 % --- Executes on button press in pushbutton7.
@@ -541,7 +499,7 @@ function popupmenu1_Callback(hObject, eventdata, handles)
     global hand;
     
     signal = get(hand.popupmenu1,'Value');
-    plot_axes_main(signal, 1);
+    plot_axes_main(hand.axes_main, signal, 1);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -665,7 +623,7 @@ function uitable1_CellSelectionCallback(hObject, eventdata, handles)
     
     if (event(2) == 2)
         signal = get(hand.popupmenu1,'value');
-        plot_axes_main (signal, sel_row);
+        plot_axes_main (hand.axes_main, signal, sel_row);
     end
 
 
@@ -735,9 +693,9 @@ function pushbutton13_Callback(hObject, eventdata, handles)
     
 
 
-% --- Executes when selected object is changed in uipanel7.
-function uipanel7_SelectionChangeFcn(hObject, eventdata, handles)
-% hObject    handle to the selected object in uipanel7 
+% --- Executes when selected object is changed in uipanel_preview.
+function uipanel_preview_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in uipanel_preview 
 % eventdata  structure with the following fields (see UIBUTTONGROUP)
 %	EventName: string 'SelectionChanged' (read only)
 %	OldValue: handle of the previously selected object or empty if none was selected
@@ -750,21 +708,21 @@ function uipanel7_SelectionChangeFcn(hObject, eventdata, handles)
     global left_pos;
     global right_pos;
         
-    cla(hand.axes2);
+    cla(hand.axes_preview);
     
-    hold(hand.axes2,'on');
+    hold(hand.axes_preview,'on');
     for i = 1:Count_beats
         if (data_table(i) == 1)
-            switch (get(get(handles.uipanel7,'SelectedObject'),'Tag'))
+            switch (get(get(handles.uipanel_preview,'SelectedObject'),'Tag'))
             case 'Part_chbox' %Part plot
-                plot3(hand.axes2,XYZ_win(i,left_pos:right_pos,1),XYZ_win(i,left_pos:right_pos,2),XYZ_win(i,left_pos:right_pos,3),'color',rand(1,3));
+                plot3(hand.axes_preview,XYZ_win(i,left_pos:right_pos,1),XYZ_win(i,left_pos:right_pos,2),XYZ_win(i,left_pos:right_pos,3),'color',rand(1,3));
             case 'All_chbox'
-                plot3(hand.axes2,XYZ_win(i,:,1),XYZ_win(i,:,2),XYZ_win(i,:,3),'color',rand(1,3));
+                plot3(hand.axes_preview,XYZ_win(i,:,1),XYZ_win(i,:,2),XYZ_win(i,:,3),'color',rand(1,3));
             end
         end
     end
     
-    hold(hand.axes2,'off');
+    hold(hand.axes_preview,'off');
 
 
 % --- Executes on button press in pushbutton14.
@@ -787,7 +745,7 @@ function pushbutton15_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
     global hand;
     
-    view(hand.axes2,-60,60);
+    view(hand.axes_preview,-60,40);
 
 % --- Executes on slider movement.
 function slider6_Callback(hObject, eventdata, handles)
@@ -983,3 +941,13 @@ function pushbutton8_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to pushbutton8 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
+
+
+% --- Executes when selected object is changed in uipanel_preview.
+function uipanel_preview_SelectionChangeFcn(hObject, eventdata, handles)
+% hObject    handle to the selected object in uipanel_preview 
+% eventdata  structure with the following fields (see UIBUTTONGROUP)
+%	EventName: string 'SelectionChanged' (read only)
+%	OldValue: handle of the previously selected object or empty if none was selected
+%	NewValue: handle of the currently selected object
+% handles    structure with handles and user data (see GUIDATA)

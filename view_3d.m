@@ -22,7 +22,7 @@ function varargout = view_3d(varargin)
 
 % Edit the above text to modify the response to help view_3d
 
-% Last Modified by GUIDE v2.5 11-Dec-2015 13:56:18
+% Last Modified by GUIDE v2.5 20-Dec-2015 12:06:21
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -98,7 +98,8 @@ function init
     global hand_3d;
     global pos_axes_left;
     global pos_axes_right;
-    global part_line_style;
+    global part_line_style_l;
+    global part_line_style_r;
     global values_width;
     global values_line_style;
     global values_markers;
@@ -146,20 +147,23 @@ function init
     %init default values style
     values_width = {'1'; '1.5'; '2'; '2.5'; '3'};
     values_line_style =  {'-'; '--'; ':'; '-.'};
-    values_markers = {'none'; 'o'; '+'; '*'; '.'; 'x'; 's'; 'd'; '^'; 'v'; '>'; '<'; 'p'; 'h'};
-    part_line_style.color = 'red';
+    values_markers = {'n'; 'o'; '+'; '*'; '.'; 'x'; 's'; 'd'; '^'; 'v'; '>'; '<'; 'p'; 'h'};
+    part_line_style_l.color = 'red';
+    part_line_style_r.color = 'red';
     
-    %init examples
-    part_line_style.style = char(values_line_style(get(hand_3d.popupmenu_style,'value')));
-    part_line_style.width = str2double(char(values_width(get(hand_3d.popupmenu_width,'value'))));
-    part_line_style.marker = char(values_markers(get(hand_3d.popupmenu_markers,'value'))); 
-    plot_example(hand_3d.axes_example_part , part_line_style); %plot example
-    set(hand_3d.pushbutton_color,'BackgroundColor',part_line_style.color);
+    %init examples left
+    part_line_style_l.style = char(values_line_style(get(hand_3d.popupmenu_style_l,'value')));
+    part_line_style_l.width = str2double(char(values_width(get(hand_3d.popupmenu_width_l,'value'))));
+    part_line_style_l.marker = char(values_markers(get(hand_3d.popupmenu_markers_l,'value')));
+    plot_example(hand_3d.axes_example_part_l, part_line_style_l); %plot example
+    set(hand_3d.pushbutton_color_l,'BackgroundColor',part_line_style_l.color);
     
-    set(hand_3d.edit_left,'string',num2str(1));
-    set(hand_3d.edit_right,'string',num2str(10));
-    
-    set(hand_3d.uitable_beats, 'CellEditCallback', @table_beats_checked);
+    %init examples right
+    part_line_style_r.style = char(values_line_style(get(hand_3d.popupmenu_style_r,'value')));
+    part_line_style_r.width = str2double(char(values_width(get(hand_3d.popupmenu_width_r,'value'))));
+    part_line_style_r.marker = char(values_markers(get(hand_3d.popupmenu_markers_r,'value'))); 
+    plot_example(hand_3d.axes_example_part_r, part_line_style_r); %plot example
+    set(hand_3d.pushbutton_color_r,'BackgroundColor',part_line_style_r.color);
 
 %start from other program    
 function external_init(main_val_in)
@@ -167,11 +171,15 @@ function external_init(main_val_in)
     global hand_3d;
     main_val = main_val_in;
     
-    set(hand_3d.uitable_beats,'data',main_val.data_table);
     draw(1,2);
+    
+    %load records
+    load_records(1);
     
 %Draw graphs
 function draw (left_graph, right_graph)
+    global part_line_style_l;
+    global part_line_style_r;
 %{
 Numbers:
 0 - none draw
@@ -179,6 +187,8 @@ Numbers:
 2 - part
 3 - normal vector
 4 - plane
+5 - plane weidth
+6 - peaks
 %}
     global hand_3d;
     global main_val;
@@ -188,7 +198,7 @@ Numbers:
     end
     
     if (right_graph ~= 0)
-        cla(hand_3d.axes_right); 
+        cla(hand_3d.axes_right);
     end
     
     %Left draw
@@ -196,13 +206,13 @@ Numbers:
         case 1
             for i = 1:main_val.Count_beats
                 if (main_val.data_table(i) == 1)
-                    draw_loop_part(hand_3d.axes_left,i);
+                    draw_loop_part(hand_3d.axes_left,i,part_line_style_l);
                 end
             end
         case 2
             for i = 1:main_val.Count_beats
                 if (main_val.data_table(i) == 1)
-                    draw_part(hand_3d.axes_left,i);
+                    draw_part(hand_3d.axes_left,i,part_line_style_l);
                 end
             end
         case 3
@@ -223,25 +233,29 @@ Numbers:
             end_point = main_val.right_pos;            
             [mdl] = func_non_leniar_plane_weidth(hand_3d.axes_left ,main_val.XYZ_win, beat_n, start_point, end_point);
         case 6 %Peaks
-            start_point = main_val.left_pos;
-            end_point = main_val.right_pos; 
-            peaks_count = 2;
-            peaks_dist = 100;
-            axes = 'M';
+            start_point = round(main_val.left_pos);
+            end_point = round(main_val.right_pos); 
+            peaks_count = str2num(get(hand_3d.edit_peaks_count,'string'));
+            peaks_dist = str2num(get(hand_3d.edit_peaks_dist,'string'));
+            switch (get(hand_3d.popupmenu_vector,'value'))
+                case 1
+                    axes = 'X';
+                case 2 
+                    axes = 'Y';
+                case 3
+                    axes = 'Z';
+                case 4
+                    axes = 'M';
+            end
             for i = 1:main_val.Count_beats
                 if (main_val.data_table(i) == 1)
-                    draw_part(hand_3d.axes_left,i);
+                    draw_part(hand_3d.axes_left,i,part_line_style_l);
                     [pks,locs] = func_find_extremum (main_val.XYZ_win, i, start_point, end_point, axes, peaks_count, peaks_dist);
                     hold(hand_3d.axes_left,'on');
-                    plot3(hand_3d.axes_left,main_val.XYZ_win(i,locs,1),main_val.XYZ_win(i,locs,2),main_val.XYZ_win(i,locs,3),'or','Linewidth',2);
+                    plot3(hand_3d.axes_left,main_val.XYZ_win(i,start_point+locs,1),main_val.XYZ_win(i,start_point+locs,2),main_val.XYZ_win(i,start_point+locs,3),'or','Linewidth',2);
                     hold(hand_3d.axes_left,'off');
                 end
-            end
- 
-            
-            
-            
-            
+            end   
     end
             
     %Right draw
@@ -249,13 +263,13 @@ Numbers:
         case 1
             for i = 1:main_val.Count_beats
                 if (main_val.data_table(i) == 1)
-                    draw_loop_part(hand_3d.axes_right,i);
+                    draw_loop_part(hand_3d.axes_right,i, part_line_style_r);
                 end
             end
         case 2
             for i = 1:main_val.Count_beats
                 if (main_val.data_table(i) == 1)
-                    draw_part(hand_3d.axes_right,i);
+                    draw_part(hand_3d.axes_right,i, part_line_style_r);
                 end
             end
         case 3
@@ -275,6 +289,31 @@ Numbers:
              start_point = main_val.left_pos;
              end_point = main_val.right_pos;            
              [mdl] = func_non_leniar_plane_weidth(hand_3d.axes_right ,main_val.XYZ_win, beat_n, start_point, end_point);
+        case 6 %Peaks
+            start_point = round(main_val.left_pos);
+            end_point = round(main_val.right_pos); 
+            peaks_count = str2double(get(hand_3d.edit_peaks_count,'string'));
+            peaks_dist = str2double(get(hand_3d.edit_peaks_dist,'string'));
+            switch (get(hand_3d.popupmenu_vector,'value'))
+                case 1
+                    axes = 'X';
+                case 2 
+                    axes = 'Y';
+                case 3
+                    axes = 'Z';
+                case 4
+                    axes = 'M';
+            end
+            for i = 1:main_val.Count_beats
+                if (main_val.data_table(i) == 1)
+                    draw_part(hand_3d.axes_right,i,part_line_style_r);
+                    [pks,locs] = func_find_extremum (main_val.XYZ_win, i, start_point, end_point, axes, peaks_count, peaks_dist);
+                    hold(hand_3d.axes_right,'on');
+                    plot3(hand_3d.axes_right,main_val.XYZ_win(i,start_point+locs,1),main_val.XYZ_win(i,start_point+locs,2),main_val.XYZ_win(i,start_point+locs,3),'or','Linewidth',2);
+                    hold(hand_3d.axes_right,'off');
+                end
+            end   
+
     end    
     
 function table_beats_checked(src, eventdata)
@@ -288,56 +327,27 @@ function table_beats_checked(src, eventdata)
         main_val.data_table(row_changed) = true;
         
     end
-    set(hand_3d.uitable_beats,'data',main_val.data_table);  
     
 %Draw part
-function draw_part (handle_in,num)
+function draw_part (handle_in,num, part_line_style_in)
     global main_val;
-
+  
     hold(handle_in,'on');
-    plot3(handle_in,main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,1),main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,2),main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,3),'color',main_val.beat_color(num,:),'LineWidth',2);
+    plot3(handle_in,main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,1),main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,2),main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,3),'color',main_val.beat_color(num,:),'LineWidth',part_line_style_in.width,'LineStyle',part_line_style_in.style,'Marker',part_line_style_in.marker);
     hold(handle_in,'off');
     
 %Draw loop and part
-function draw_loop_part (handle_in,num)
+function draw_loop_part (handle_in,num, part_line_style_in)
     global main_val;
-    global part_line_style;
 
     hold(handle_in,'on');
     %Draw loop
     plot3(handle_in,main_val.XYZ_win(num,main_val.win_left:main_val.left_pos,1),main_val.XYZ_win(num,main_val.win_left:main_val.left_pos,2),main_val.XYZ_win(num,main_val.win_left:main_val.left_pos,3),'color',main_val.beat_color(num,:),'LineWidth',2);          
     %plot3(handle_in,main_val.XYZ_win(num,main_val.right_pos:main_val.win_right,1),main_val.XYZ_win(num,main_val.right_pos:main_val.win_right,2),main_val.XYZ_win(num,main_val.right_pos:main_val.win_right,3),'color',main_val.beat_color(num,:),'LineWidth',2);          
     %Draw part on left graph
-    plot3(handle_in,main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,1),main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,2),main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,3),'color',part_line_style.color,'LineWidth',part_line_style.width,'LineStyle',part_line_style.style,'Marker',part_line_style.marker);            
+    plot3(handle_in,main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,1),main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,2),main_val.XYZ_win(num,main_val.left_pos:main_val.left_pos+main_val.move_val,3),'color',part_line_style_in.color,'LineWidth',part_line_style_in.width,'LineStyle',part_line_style_in.style,'Marker',part_line_style_in.marker);            
     hold(handle_in,'off');
-            
-% --- Executes on button press in pushbutton1.
-function pushbutton1_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in pushbutton2.
-function pushbutton2_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in pushbutton3.
-function pushbutton3_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton3 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-    
-% --- Executes on button press in pushbutton4.
-function pushbutton4_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton4 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-    
+             
 function sync_rotate_right(obj,evd)
     global hand_3d;
     
@@ -346,20 +356,10 @@ function sync_rotate_right(obj,evd)
     
 % --- Executes on button press in pushbutton5.
 function pushbutton5_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton5 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
 
 %Slider for resize of main axes
 function slider1_Callback(hObject, eventdata, handles)
-% hObject    handle to slider1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-   
     global hand_3d;
     global pos_axes_left;
     global pos_axes_right;
@@ -385,63 +385,9 @@ function slider1_Callback(hObject, eventdata, handles)
         set(hand_3d.axes_right,'Position',pos_right);
     end
 
-% --- Executes during object creation, after setting all properties.
-function slider1_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to slider1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor',[.9 .9 .9]);
-end
-
-
-% --- Executes on button press in pushbutton7.
-function pushbutton7_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton7 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in pushbutton8.
-function pushbutton8_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton8 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in checkbox1.
-function checkbox1_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox1 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of checkbox1
-
-
-% --- Executes on button press in radiobutton5.
-function radiobutton5_Callback(hObject, eventdata, handles)
-% hObject    handle to radiobutton5 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of radiobutton5
-
-
-% --- Executes on button press in pushbutton9.
-function pushbutton9_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton9 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
 % --------------------------------------------------------------------
 %X_Y tool bar
 function uipushtool2_ClickedCallback(hObject, eventdata, handles)
-% hObject    handle to uipushtool2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
     global hand_3d
     view(hand_3d.axes_right,0,90);
     view(hand_3d.axes_left,0,90);
@@ -449,9 +395,6 @@ function uipushtool2_ClickedCallback(hObject, eventdata, handles)
 % --------------------------------------------------------------------
 %X_Z tool bar
 function uipushtool3_ClickedCallback(hObject, eventdata, handles)
-% hObject    handle to uipushtool3 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
     global hand_3d
     view(hand_3d.axes_right,0,0);
     view(hand_3d.axes_left,0,0);
@@ -459,9 +402,6 @@ function uipushtool3_ClickedCallback(hObject, eventdata, handles)
 %Y_Z tool bar
 % --------------------------------------------------------------------
 function uipushtool5_ClickedCallback(hObject, eventdata, handles)
-% hObject    handle to uipushtool5 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
     global hand_3d
     view(hand_3d.axes_right,90,0);
     view(hand_3d.axes_left,90,0);
@@ -469,150 +409,20 @@ function uipushtool5_ClickedCallback(hObject, eventdata, handles)
 %3D tool bar
 % --------------------------------------------------------------------
 function uipushtool6_ClickedCallback(hObject, eventdata, handles)
-% hObject    handle to uipushtool6 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
     global hand_3d
     view(hand_3d.axes_right,-60,60);
     view(hand_3d.axes_left,-60,60);
 
-
-% --- Executes on slider movement.
-function slider2_Callback(hObject, eventdata, handles)
-% hObject    handle to slider2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-
-
-% --- Executes during object creation, after setting all properties.
-function slider2_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to slider2 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor',[.9 .9 .9]);
-end
-
-
-% --- Executes on slider movement.
-function slider3_Callback(hObject, eventdata, handles)
-% hObject    handle to slider3 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'Value') returns position of slider
-%        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-
-
-% --- Executes during object creation, after setting all properties.
-function slider3_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to slider3 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: slider controls usually have a light gray background.
-if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor',[.9 .9 .9]);
-end
-
-
-% --- Executes on button press in checkbox_color.
-function checkbox_color_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox_color (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of checkbox_color
-
-
-% --- Executes on button press in checkbox_point.
-function checkbox_point_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox_point (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hint: get(hObject,'Value') returns toggle state of checkbox_point
-
-%Set marker
-function popupmenu_markers_Callback(hObject, eventdata, handles)
-% hObject    handle to popupmenu_markers (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu_markers contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from popupmenu_markers
+% --- Executes on selection change in popupmenu_style_l.
+function popupmenu_style_l_Callback(hObject, eventdata, handles)
     global hand_3d;
-    global part_line_style;
-    global values_markers;
-    
-    part_line_style.marker = char(values_markers(get(hand_3d.popupmenu_markers,'value'))); 
-    plot_example(hand_3d.axes_example_part , part_line_style); %plot example
-    value_left = get(hand_3d.menu_left,'value');
-    value_right = get(hand_3d.menu_right,'value');
-    if (value_left == 1)
-        draw(1, 0); %plot part on loop
-    end
-    if (value_right == 1)
-        draw(0, 1); %plot part on loop
-    end    
-
-% --- Executes during object creation, after setting all properties.
-function popupmenu_markers_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to popupmenu_markers (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on selection change in popupmenu_style.
-function popupmenu_style_Callback(hObject, eventdata, handles)
-% hObject    handle to popupmenu_style (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu_style contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from popupmenu_style
-    global hand_3d;
-    global part_line_style;
+    global part_line_style_l;
     global values_line_style;
     
-    part_line_style.style = char(values_line_style(get(hand_3d.popupmenu_style,'value')));
-    plot_example(hand_3d.axes_example_part , part_line_style); %plot example
-    value_left = get(hand_3d.menu_left,'value');
-    value_right = get(hand_3d.menu_right,'value');
-    if (value_left == 1)
-        draw(1, 0); %plot part on loop
-    end
-    if (value_right == 1)
-        draw(0, 1); %plot part on loop
-    end  
-
-% --- Executes during object creation, after setting all properties.
-function popupmenu_style_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to popupmenu_style (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- If Enable == 'on', executes on mouse press in 5 pixel border.
-% --- Otherwise, executes on mouse press in 5 pixel border or over button_color.
-function button_color_ButtonDownFcn(hObject, eventdata, handles)
-% hObject    handle to button_color (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+    part_line_style_l.style = char(values_line_style(get(hand_3d.popupmenu_style_l,'value')));
+    plot_example(hand_3d.axes_example_part_l , part_line_style_l); %plot example
+    value = get(hand_3d.menu_left,'value');
+    draw(value, 0);
 
 %Plot example
 function plot_example (handle_in, part_line_style_in)
@@ -621,174 +431,29 @@ function plot_example (handle_in, part_line_style_in)
     set(handle_in,'Xticklabel',[],'Yticklabel',[]); %Del symbols on axes
     
 %Change line width
-function popupmenu_width_Callback(hObject, eventdata, handles)
-% hObject    handle to popupmenu_width (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu_width contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from popupmenu_width
+function popupmenu_width_l_Callback(hObject, eventdata, handles)
     global hand_3d;
-    global part_line_style;
+    global part_line_style_l;
     global values_width;
     
-    part_line_style.width = str2double(char(values_width(get(hand_3d.popupmenu_width,'value'))));
-    plot_example(hand_3d.axes_example_part , part_line_style); %plot example
-    value_left = get(hand_3d.menu_left,'value');
-    value_right = get(hand_3d.menu_right,'value');
-    if (value_left == 1)
-        draw(1, 0); %plot part on loop
-    end
-    if (value_right == 1)
-        draw(0, 1); %plot part on loop
-    end  
+    part_line_style_l.width = str2double(char(values_width(get(hand_3d.popupmenu_width_l,'value'))));
+    plot_example(hand_3d.axes_example_part_l , part_line_style_l); %plot example
+    value = get(hand_3d.menu_left,'value');
+    draw(value, 0); %plot part on loop
 
-% --- Executes during object creation, after setting all properties.
-function popupmenu_width_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to popupmenu_width (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in pushbutton11.
-function pushbutton11_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton11 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in pushbutton_color.
-function pushbutton_color_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_color (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+% --- Executes on button press in pushbutton_color_l.
+function pushbutton_color_l_Callback(hObject, eventdata, handles)
     global hand_3d;
-    global part_line_style;
+    global part_line_style_l;
     
-    part_line_style.color = uisetcolor(part_line_style.color); %Open color dialog wich preset color
-    plot_example(hand_3d.axes_example_part , part_line_style); %Replot example_plot
-    set(hand_3d.pushbutton_color,'BackgroundColor',part_line_style.color);
-    value_left = get(hand_3d.menu_left,'value');
-    value_right = get(hand_3d.menu_right,'value');
-    if (value_left == 1)
-        draw(1, 0); %plot part on loop
-    end
-    if (value_right == 1)
-        draw(0, 1); %plot part on loop
-    end  
-
-
-% --- Executes on selection change in listbox_movies.
-function listbox_movies_Callback(hObject, eventdata, handles)
-% hObject    handle to listbox_movies (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns listbox_movies contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from listbox_movies
-
-
-% --- Executes during object creation, after setting all properties.
-function listbox_movies_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to listbox_movies (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: listbox controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in pushbutton_refrash.
-function pushbutton_refrash_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_refrash (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-    global main_val;
-    global hand_3d;
-    
-    main_val.data_table = get(hand_3d.uitable_beats,'data');
-    value_left = get(hand_3d.menu_left,'value');
-    value_right = get(hand_3d.menu_right,'value');
-    draw(value_left, value_right); %plot part on loop
-    
-
-% --- Executes on button press in pushbutton_set.
-function pushbutton_set_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_set (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-    global main_val;
-    global hand_3d;
-    
-    first_beat = str2num(get(hand_3d.edit_left,'string'));
-    last_beat = str2num(get(hand_3d.edit_right,'string'));
-    
-    main_val.data_table = false(main_val.Count_beats,1);
-    main_val.data_table(first_beat:last_beat) = 1;
-    set(hand_3d.uitable_beats,'data',main_val.data_table);
-    value_left = get(hand_3d.menu_left,'value');
-    value_right = get(hand_3d.menu_right,'value');
-    draw(value_left, value_right); %plot part on loop
-
-
-function edit_left_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_left (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_left as text
-%        str2double(get(hObject,'String')) returns contents of edit_left as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit_left_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_left (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit_right_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_right (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_right as text
-%        str2double(get(hObject,'String')) returns contents of edit_right as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit_right_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_right (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
+    part_line_style_l.color = uisetcolor(part_line_style_l.color); %Open color dialog wich preset color
+    plot_example(hand_3d.axes_example_part_l , part_line_style_l); %Replot example_plot
+    set(hand_3d.pushbutton_color_l,'BackgroundColor',part_line_style_l.color);
+    value = get(hand_3d.menu_left,'value');
+    draw(value, 0); %plot part on loop
 
 % --- Executes on button press in pushbutton_record.
 function pushbutton_record_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_record (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
     global hand_3d;
     global main_val;
     global record;
@@ -818,287 +483,428 @@ function pushbutton_record_Callback(hObject, eventdata, handles)
         move_val = move_val + 1;
     end
     hold(hand_3d.axes_right,'off');
-   
+    
+    set(hand_3d.edit_save,'BackgroundColor',[1 0 0]);
+    
 % --- Executes on button press in pushbutton_play.
 function pushbutton_play_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_play (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
     global hand_3d;
     global record;
-    
+   
     movie(hand_3d.axes_right,record,2);
-
-% --- Executes on button press in pushbutton17.
-function pushbutton17_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton17 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in pushbutton18.
-function pushbutton18_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton18 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in pushbutton_shift_left.
-function pushbutton_shift_left_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_shift_left (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in pushbutton_shift_right.
-function pushbutton_shift_right_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_shift_right (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on selection change in listbox_movies.
-function listbox2_Callback(hObject, eventdata, handles)
-% hObject    handle to listbox_movies (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns listbox_movies contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from listbox_movies
-
-
-% --- Executes during object creation, after setting all properties.
-function listbox2_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to listbox_movies (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: listbox controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit_name_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_name (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_name as text
-%        str2double(get(hObject,'String')) returns contents of edit_name as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit_name_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_name (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in pushbutton21.
-function pushbutton21_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton21 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-    
-    
-
 
 % --- Executes on selection change in menu_left.
 function menu_left_Callback(hObject, eventdata, handles)
-% hObject    handle to menu_left (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns menu_left contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from menu_left
     global hand_3d;
     
     value = get(hand_3d.menu_left,'value');
     draw(value, 0);
 
-
-% --- Executes during object creation, after setting all properties.
-function menu_left_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to menu_left (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
 % --- Executes on selection change in menu_right.
 function menu_right_Callback(hObject, eventdata, handles)
-% hObject    handle to menu_right (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns menu_right contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from menu_right
     global hand_3d;
     
     value = get(hand_3d.menu_right,'value');
     draw(0, value);
 
-% --- Executes during object creation, after setting all properties.
-function menu_right_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to menu_right (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit_beat_n_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_beat_n (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_beat_n as text
-%        str2double(get(hObject,'String')) returns contents of edit_beat_n as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit_beat_n_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_beat_n (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit_step_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_step (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_step as text
-%        str2double(get(hObject,'String')) returns contents of edit_step as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit_step_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_step (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function edit_window_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_window (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of edit_window as text
-%        str2double(get(hObject,'String')) returns contents of edit_window as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function edit_window_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_window (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on selection change in listbox3.
-function listbox3_Callback(hObject, eventdata, handles)
-% hObject    handle to listbox3 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns listbox3 contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from listbox3
-
-
-% --- Executes during object creation, after setting all properties.
-function listbox3_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to listbox3 (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: listbox controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
+% --- Executes on selection change in listbox_rec.
+function listbox_rec_Callback(hObject, eventdata, handles)
+    global record;
+    global hand_3d;
+    global rec_var;
+    
+    r = cell2struct(rec_var.rec(get(hand_3d.listbox_rec,'Value')), {'record'}, 1);
+    record = r.record;
 
 % --- Executes on button press in pushbutton_update_vector.
 function pushbutton_update_vector_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_update_vector (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
+    global hand_3d;
+    
+    value_left = get(hand_3d.menu_left,'value');
+    value_right = get(hand_3d.menu_right,'value');
+    if (value_left == 3)
+        draw(value_left, 0);
+    end
+    if (value_right == 3)
+        draw(0, value_right);
+    end
 
 function edit_save_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_save (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_save as text
-%        str2double(get(hObject,'String')) returns contents of edit_save as a double
+% --- Executes on button press in pushbutton_save.
+function pushbutton_save_Callback(hObject, eventdata, handles)
+    global record;
+    global hand_3d;
+    name_file = 'movies.mat';
+    
+    if exist(name_file, 'file')
+        % File exists.
+        load(name_file);
+        count = count + 1;
+        rec_name(count) = {get(hand_3d.edit_save,'string')};
+        rec(count) = {record};
+    else
+        % File does not exist.
+        count = 1;
+        rec_name = {get(hand_3d.edit_save,'string')};
+        rec = {record};
+    end
+    
+    save('movies.mat','rec','rec_name','count');
+    set(hand_3d.edit_save,'BackgroundColor',[0 1 0]);
+    load_records(count);
+  
+function load_records(value)
+    global hand_3d;
+    global rec_var;
+    name_file = 'movies.mat';
+    
+    if exist(name_file, 'file')
+        % File exists.
+        load(name_file);
+        set(hand_3d.listbox_rec,'String',rec_name);
+        set(hand_3d.edit_save,'String',['REC' num2str(count+1)]);
+        set(hand_3d.listbox_rec,'Enable','on');
+        set(hand_3d.listbox_rec,'value',value);
+        rec_var.rec_name = rec_name;
+        rec_var.rec = rec;
+        rec_var.count = count;
+    else
+        set(hand_3d.listbox_rec,'String','File non exist');
+        set(hand_3d.listbox_rec,'Enable','off');
+    end
 
+% --- Executes on button press in pushbutton_main_window.
+function pushbutton_main_window_Callback(hObject, eventdata, handles)
+    global hand_3d;
+    
+    set(hand.view_3d_fig,'Visible','on');
+
+% --- Executes on selection change in popupmenu_markers_r.
+function popupmenu_markers_r_Callback(hObject, eventdata, handles)
+    global hand_3d;
+    global part_line_style_r;
+    global values_markers;
+    
+    part_line_style_r.marker = char(values_markers(get(hand_3d.popupmenu_markers_r,'value'))); 
+    plot_example(hand_3d.axes_example_part_r , part_line_style_r); %plot example
+    value = get(hand_3d.menu_right,'value');
+    draw(0, value);
+
+% --- Executes on selection change in popupmenu_style_r.
+function popupmenu_style_r_Callback(hObject, eventdata, handles)
+    global hand_3d;
+    global part_line_style_r;
+    global values_line_style;
+    
+    part_line_style_r.style = char(values_line_style(get(hand_3d.popupmenu_style_r,'value')));
+    plot_example(hand_3d.axes_example_part_r , part_line_style_r); %plot example
+    value = get(hand_3d.menu_right,'value');
+    draw(0, value);
+
+% --- Executes on selection change in popupmenu_width_r.
+function popupmenu_width_r_Callback(hObject, eventdata, handles)
+    global hand_3d;
+    global part_line_style_r;
+    global values_width;
+    
+    part_line_style_r.width = str2double(char(values_width(get(hand_3d.popupmenu_width_r,'value'))));
+    plot_example(hand_3d.axes_example_part_r , part_line_style_r); %plot example
+    value = get(hand_3d.menu_right,'value');
+    draw(0, value); %plot part on loop
+
+% --- Executes on button press in pushbutton_color_r.
+function pushbutton_color_r_Callback(hObject, eventdata, handles)
+    global hand_3d;
+    global part_line_style_r;
+    
+    part_line_style_r.color = uisetcolor(part_line_style_r.color); %Open color dialog wich preset color
+    plot_example(hand_3d.axes_example_part_r , part_line_style_r); %Replot example_plot
+    set(hand_3d.pushbutton_color_r,'BackgroundColor',part_line_style_r.color);
+    value = get(hand_3d.menu_right,'value');
+    draw(0, value);
+
+% --- Executes on selection change in popupmenu_markers_l.
+function popupmenu_markers_l_Callback(hObject, eventdata, handles)
+    global hand_3d;
+    global part_line_style_l;
+    global values_markers;
+    
+    part_line_style_l.marker = char(values_markers(get(hand_3d.popupmenu_markers_l,'value'))); 
+    plot_example(hand_3d.axes_example_part_l , part_line_style_l); %plot example
+    value_left = get(hand_3d.menu_left,'value');
+    draw(value_left, 0); %plot part on loop
+
+% --- Executes on button press in pushbutton_update_peaks.
+function pushbutton_update_peaks_Callback(hObject, eventdata, handles)
+    global hand_3d;
+    
+    value_left = get(hand_3d.menu_left,'value');
+    value_right = get(hand_3d.menu_right,'value');
+    if (value_left == 6)
+        draw(value_left, 0);
+    end
+    if (value_right == 6)
+        draw(0, value_right);
+    end
+
+% --- Executes on button press in pushbutton17.
+function pushbutton17_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton18.
+function pushbutton18_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton_shift_left.
+function pushbutton_shift_left_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton_shift_right.
+function pushbutton_shift_right_Callback(hObject, eventdata, handles)
+
+% --- Executes on selection change in listbox_movies.
+function listbox_movies_Callback(hObject, eventdata, handles)
+
+% --- Executes on selection change in listbox_movies.
+function listbox2_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton11.
+function pushbutton11_Callback(hObject, eventdata, handles)
+
+function edit_name_Callback(hObject, eventdata, handles)
+
+function button_color_ButtonDownFcn(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton21.
+function pushbutton21_Callback(hObject, eventdata, handles)
+  
+function edit_beat_n_Callback(hObject, eventdata, handles)
+
+function edit_step_Callback(hObject, eventdata, handles)
+
+function edit_window_Callback(hObject, eventdata, handles)
+   
+% --- Executes on button press in pushbutton_del.
+function pushbutton_del_Callback(hObject, eventdata, handles)
+    global hand_3d;
+    name_file = 'movies.mat';
+    
+    if exist(name_file, 'file')
+        % File exists.
+        load(name_file);
+        pos = get(hand_3d.listbox_rec,'Value');
+        rec_name_out(1:pos-1) = rec_name(1:pos-1);
+        rec_name_out(pos:count-1) = rec_name(pos+1:count);
+        rec_out(1:pos-1) = rec(1:pos-1);
+        rec_out(pos:count-1) = rec(pos+1:count);
+        count_out = count - 1;  
+    end
+    
+    rec_name = rec_name_out;
+    rec = rec_out;
+    count = count_out;
+    save(name_file,'rec','rec_name','count');
+    load_records(count);
+
+% --- Executes on button press in pushbutton_stop.
+function pushbutton_stop_Callback(hObject, eventdata, handles)
+    
+function edit_peaks_count_Callback(hObject, eventdata, handles)
+
+% --- Executes on slider movement.
+function slider2_Callback(hObject, eventdata, handles)
+
+% --- Executes on slider movement.
+function slider3_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in checkbox_color.
+function checkbox_color_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in checkbox_point.
+function checkbox_point_Callback(hObject, eventdata, handles)
+
+function edit_peaks_dist_Callback(hObject, eventdata, handles)
+
+function edit10_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton7.
+function pushbutton7_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton8.
+function pushbutton8_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in checkbox1.
+function checkbox1_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in radiobutton5.
+function radiobutton5_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton9.
+function pushbutton9_Callback(hObject, eventdata, handles)
+    
+% --- Executes on button press in pushbutton1.
+function pushbutton1_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton2.
+function pushbutton2_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton3.
+function pushbutton3_Callback(hObject, eventdata, ~)
+
+% --- Executes on selection change in popupmenu_vector.
+function popupmenu_vector_Callback(hObject, eventdata, handles)
+
+% --- Executes on button press in pushbutton4.
+function pushbutton4_Callback(hObject, eventdata, handles)
+
+function edit_left_Callback(hObject, eventdata, handles)
+
+function edit_right_Callback(hObject, eventdata, handles)
 
 % --- Executes during object creation, after setting all properties.
-function edit_save_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_save (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
+function popupmenu_style_r_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Executes during object creation, after setting all properties.
+function popupmenu_markers_l_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
-% --- Executes on button press in pushbutton_save.
-function pushbutton_save_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_save (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+% --- Executes during object creation, after setting all properties.
+function popupmenu_markers_r_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
+% --- Executes during object creation, after setting all properties.
+function popupmenu_vector_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
-% --- Executes on button press in pushbutton_main_window.
-function pushbutton_main_window_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_main_window (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-    global hand_3d;
-    
-    set(hand.view_3d_fig,'Visible','on');
+% --- Executes during object creation, after setting all properties.
+function edit10_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu_width_r_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_peaks_dist_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_peaks_count_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_save_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function listbox_rec_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_window_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_step_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_beat_n_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function menu_right_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function menu_left_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_name_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function listbox2_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_right_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function edit_left_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function listbox_movies_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu_width_l_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu_style_l_CreateFcn(hObject, eventdata, handles)
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function slider3_CreateFcn(hObject, eventdata, handles)
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+% --- Executes during object creation, after setting all properties.
+function slider2_CreateFcn(hObject, eventdata, handles)
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+% --- Executes during object creation, after setting all properties.
+function slider1_CreateFcn(hObject, eventdata, handles)
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
