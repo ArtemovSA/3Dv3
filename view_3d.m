@@ -22,7 +22,7 @@ function varargout = view_3d(varargin)
 
 % Edit the above text to modify the response to help view_3d
 
-% Last Modified by GUIDE v2.5 20-Dec-2015 12:06:21
+% Last Modified by GUIDE v2.5 21-Dec-2015 11:27:53
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -156,15 +156,36 @@ function init
     part_line_style_l.width = str2double(char(values_width(get(hand_3d.popupmenu_width_l,'value'))));
     part_line_style_l.marker = char(values_markers(get(hand_3d.popupmenu_markers_l,'value')));
     plot_example(hand_3d.axes_example_part_l, part_line_style_l); %plot example
-    set(hand_3d.pushbutton_color_l,'BackgroundColor',part_line_style_l.color);
+    set(hand_3d.axes_example_part_l,'ButtonDownFcn',@axes_example_l_ClickCallback);
     
     %init examples right
     part_line_style_r.style = char(values_line_style(get(hand_3d.popupmenu_style_r,'value')));
     part_line_style_r.width = str2double(char(values_width(get(hand_3d.popupmenu_width_r,'value'))));
     part_line_style_r.marker = char(values_markers(get(hand_3d.popupmenu_markers_r,'value'))); 
     plot_example(hand_3d.axes_example_part_r, part_line_style_r); %plot example
-    set(hand_3d.pushbutton_color_r,'BackgroundColor',part_line_style_r.color);
+    set(hand_3d.axes_example_part_r,'ButtonDownFcn',@axes_example_r_ClickCallback);
 
+%Click to example left
+function axes_example_l_ClickCallback (hObject , eventData)
+    global hand_3d;
+    global part_line_style_l;
+    
+    part_line_style_l.color = uisetcolor(part_line_style_l.color); %Open color dialog wich preset color
+    plot_example(hand_3d.axes_example_part_l , part_line_style_l); %Replot example_plot
+    value = get(hand_3d.menu_left,'value');
+    draw(value, 0); %plot part on loop
+    
+%Click to example right
+function axes_example_r_ClickCallback (hObject , eventData)
+    global hand_3d;
+    global part_line_style_r;
+    
+    part_line_style_r.color = uisetcolor(part_line_style_r.color); %Open color dialog wich preset color
+    plot_example(hand_3d.axes_example_part_r , part_line_style_r); %Replot example_plot
+    value = get(hand_3d.menu_right,'value');
+    draw(0, value);
+
+    
 %start from other program    
 function external_init(main_val_in)
     global main_val;
@@ -189,6 +210,7 @@ Numbers:
 4 - plane
 5 - plane weidth
 6 - peaks
+7 - Fit 3D
 %}
     global hand_3d;
     global main_val;
@@ -256,6 +278,18 @@ Numbers:
                     hold(hand_3d.axes_left,'off');
                 end
             end   
+        case 7 %Fit 3D
+            beat_n = str2num(get(hand_3d.edit_beat_n_fit,'string'));
+            start_point = main_val.left_pos;
+            end_point = main_val.right_pos;
+            switch (get(hand_3d.popupmenu_approx_type,'value'))
+                case 1
+                    approx_type = 'plane';
+                case 2
+                    approx_type = 'line'; 
+            end
+            [Err,N,P] = func_fit_3D_data(hand_3d.axes_left, main_val.XYZ_win(beat_n,start_point:end_point,1), main_val.XYZ_win(beat_n,start_point:end_point,2), main_val.XYZ_win(beat_n,start_point:end_point,3), approx_type, 'on', 'on');
+            set(hand_3d.edit_error,'String',num2str(Err));
     end
             
     %Right draw
@@ -312,8 +346,19 @@ Numbers:
                     plot3(hand_3d.axes_right,main_val.XYZ_win(i,start_point+locs,1),main_val.XYZ_win(i,start_point+locs,2),main_val.XYZ_win(i,start_point+locs,3),'or','Linewidth',2);
                     hold(hand_3d.axes_right,'off');
                 end
-            end   
-
+            end  
+        case 7 %Fit 3D
+            beat_n = str2num(get(hand_3d.edit_beat_n_fit,'string'));
+            start_point = main_val.left_pos;
+            end_point = main_val.right_pos;
+            switch (get(hand_3d.popupmenu_approx_type,'value'))
+                case 1
+                    approx_type = 'plane';
+                case 2
+                    approx_type = 'line'; 
+            end
+            [Err,N,P] = func_fit_3D_data(hand_3d.axes_right, main_val.XYZ_win(beat_n,start_point:end_point,1), main_val.XYZ_win(beat_n,start_point:end_point,2), main_val.XYZ_win(beat_n,start_point:end_point,3), approx_type, 'on', 'on');
+            set(hand_3d.edit_error,'String',num2str(Err));
     end    
     
 function table_beats_checked(src, eventdata)
@@ -441,17 +486,6 @@ function popupmenu_width_l_Callback(hObject, eventdata, handles)
     value = get(hand_3d.menu_left,'value');
     draw(value, 0); %plot part on loop
 
-% --- Executes on button press in pushbutton_color_l.
-function pushbutton_color_l_Callback(hObject, eventdata, handles)
-    global hand_3d;
-    global part_line_style_l;
-    
-    part_line_style_l.color = uisetcolor(part_line_style_l.color); %Open color dialog wich preset color
-    plot_example(hand_3d.axes_example_part_l , part_line_style_l); %Replot example_plot
-    set(hand_3d.pushbutton_color_l,'BackgroundColor',part_line_style_l.color);
-    value = get(hand_3d.menu_left,'value');
-    draw(value, 0); %plot part on loop
-
 % --- Executes on button press in pushbutton_record.
 function pushbutton_record_Callback(hObject, eventdata, handles)
     global hand_3d;
@@ -485,6 +519,19 @@ function pushbutton_record_Callback(hObject, eventdata, handles)
     hold(hand_3d.axes_right,'off');
     
     set(hand_3d.edit_save,'BackgroundColor',[1 0 0]);
+
+% --- Executes on button press in pushbutton_update_fit3D.
+function pushbutton_update_fit3D_Callback(hObject, eventdata, handles)
+    global hand_3d;
+    
+    value_left = get(hand_3d.menu_left,'value');
+    value_right = get(hand_3d.menu_right,'value');
+    if (value_left == 7)
+        draw(value_left, 0);
+    end
+    if (value_right == 7)
+        draw(0, value_right);
+    end
     
 % --- Executes on button press in pushbutton_play.
 function pushbutton_play_Callback(hObject, eventdata, handles)
@@ -612,17 +659,6 @@ function popupmenu_width_r_Callback(hObject, eventdata, handles)
     plot_example(hand_3d.axes_example_part_r , part_line_style_r); %plot example
     value = get(hand_3d.menu_right,'value');
     draw(0, value); %plot part on loop
-
-% --- Executes on button press in pushbutton_color_r.
-function pushbutton_color_r_Callback(hObject, eventdata, handles)
-    global hand_3d;
-    global part_line_style_r;
-    
-    part_line_style_r.color = uisetcolor(part_line_style_r.color); %Open color dialog wich preset color
-    plot_example(hand_3d.axes_example_part_r , part_line_style_r); %Replot example_plot
-    set(hand_3d.pushbutton_color_r,'BackgroundColor',part_line_style_r.color);
-    value = get(hand_3d.menu_right,'value');
-    draw(0, value);
 
 % --- Executes on selection change in popupmenu_markers_l.
 function popupmenu_markers_l_Callback(hObject, eventdata, handles)
@@ -908,3 +944,79 @@ function slider1_CreateFcn(hObject, eventdata, handles)
 if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
+
+
+
+function edit_beat_n_fit_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_beat_n_fit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_beat_n_fit as text
+%        str2double(get(hObject,'String')) returns contents of edit_beat_n_fit as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_beat_n_fit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_beat_n_fit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit_error_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_error (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of edit_error as text
+%        str2double(get(hObject,'String')) returns contents of edit_error as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit_error_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_error (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on selection change in popupmenu_approx_type.
+function popupmenu_approx_type_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu_approx_type (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu_approx_type contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu_approx_type
+
+
+% --- Executes during object creation, after setting all properties.
+function popupmenu_approx_type_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu_approx_type (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in pushbutton_update_fit_3D.
+function pushbutton_update_fit_3D_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_update_fit_3D (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)

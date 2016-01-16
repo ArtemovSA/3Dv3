@@ -154,7 +154,7 @@ function plot_axes_part (handle_in)
     plot(handle_in,XYZ_win(1,left_pos:right_pos,2),'color','green','LineWidth',2);
     plot(handle_in,XYZ_win(1,left_pos:right_pos,3),'color','blue','LineWidth',2);
     plot_YLim = get(handle_in,'YLim');
-    plot(handle_in,[move_val move_val],plot_YLim, 'color','red','LineWidth',1,'LineStyle','--');
+    plot(handle_in,[move_val move_val],plot_YLim, 'color','red','LineWidth',2,'LineStyle','--');
     hold(handle_in,'off');
 
 
