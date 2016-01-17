@@ -211,6 +211,7 @@ Numbers:
 5 - plane weidth
 6 - peaks
 7 - Fit 3D
+8 - Sphere N_Vector
 %}
     global hand_3d;
     global main_val;
@@ -237,7 +238,7 @@ Numbers:
                     draw_part(hand_3d.axes_left,i,part_line_style_l);
                 end
             end
-        case 3
+        case 3 %normal vector
             step = str2num(get(hand_3d.edit_step,'string'));
             beat_n = str2num(get(hand_3d.edit_beat_n,'string'));
             win_size = str2num(get(hand_3d.edit_window,'string'));
@@ -290,6 +291,13 @@ Numbers:
             end
             [Err,N,P] = func_fit_3D_data(hand_3d.axes_left, main_val.XYZ_win(beat_n,start_point:end_point,1), main_val.XYZ_win(beat_n,start_point:end_point,2), main_val.XYZ_win(beat_n,start_point:end_point,3), approx_type, 'on', 'on');
             set(hand_3d.edit_error,'String',num2str(Err));
+        case 8 %Sphere n_vector
+            step = str2num(get(hand_3d.edit_step,'string'));
+            beat_n = str2num(get(hand_3d.edit_beat_n,'string'));
+            win_size = str2num(get(hand_3d.edit_window,'string'));
+            start_point = main_val.left_pos;
+            end_point = main_val.right_pos;
+            [normal,Err] = func_sphere_normal_vector(hand_3d.axes_left ,main_val.XYZ_win, beat_n, step, win_size, start_point, end_point, 'off','on');
     end
             
     %Right draw
@@ -359,6 +367,13 @@ Numbers:
             end
             [Err,N,P] = func_fit_3D_data(hand_3d.axes_right, main_val.XYZ_win(beat_n,start_point:end_point,1), main_val.XYZ_win(beat_n,start_point:end_point,2), main_val.XYZ_win(beat_n,start_point:end_point,3), approx_type, 'on', 'on');
             set(hand_3d.edit_error,'String',num2str(Err));
+        case 8 %Sphere n_vector
+            step = str2num(get(hand_3d.edit_step,'string'));
+            beat_n = str2num(get(hand_3d.edit_beat_n,'string'));
+            win_size = str2num(get(hand_3d.edit_window,'string'));
+            start_point = main_val.left_pos;
+            end_point = main_val.right_pos;
+            [normal,Err] = func_sphere_normal_vector(hand_3d.axes_right ,main_val.XYZ_win, beat_n, step, win_size, start_point, end_point, 'off','on');
     end    
     
 function table_beats_checked(src, eventdata)
