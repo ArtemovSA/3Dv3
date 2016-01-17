@@ -22,7 +22,7 @@ function varargout = view_3d(varargin)
 
 % Edit the above text to modify the response to help view_3d
 
-% Last Modified by GUIDE v2.5 17-Jan-2016 22:28:33
+% Last Modified by GUIDE v2.5 17-Jan-2016 21:53:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -304,18 +304,7 @@ Numbers:
             beat_n_2 = str2num(get(hand_3d.edit_beat_2,'string'));
             start_point = main_val.left_pos;
             end_point = main_val.right_pos;
-            switch (get(hand_3d.popupmenu_dtw_ax,'value'))
-                case 1
-                    axes_dtw = 'X';
-                case 2 
-                    axes_dtw = 'Y';
-                case 3
-                    axes_dtw = 'Z';
-                case 4
-                    axes_dtw = 'M';
-            end
-            show_dtw_path = get(hand_3d.checkbox_path,'value');
-            func_DTW_3D(hand_3d.axes_left, main_val.XYZ_win, beat_n_1, beat_n_2, start_point, end_point, axes_dtw, show_dtw_path);
+            func_DTW_3D(hand_3d.axes_left, main_val.XYZ_win
     end
             
     %Right draw
@@ -392,23 +381,6 @@ Numbers:
             start_point = main_val.left_pos;
             end_point = main_val.right_pos;
             [normal,Err] = func_sphere_normal_vector(hand_3d.axes_right ,main_val.XYZ_win, beat_n, step, win_size, start_point, end_point, 'off','on');
-        case 9 %DTW
-            beat_n_1 = str2num(get(hand_3d.edit_beat_1,'string'));
-            beat_n_2 = str2num(get(hand_3d.edit_beat_2,'string'));
-            start_point = main_val.left_pos;
-            end_point = main_val.right_pos;
-            switch (get(hand_3d.popupmenu_dtw_ax,'value'))
-                case 1
-                    axes_dtw = 'X';
-                case 2 
-                    axes_dtw = 'Y';
-                case 3
-                    axes_dtw = 'Z';
-                case 4
-                    axes_dtw = 'M';
-            end
-            show_dtw_path = get(hand_3d.checkbox_path,'value');
-            func_DTW_3D(hand_3d.axes_right, main_val.XYZ_win, beat_n_1, beat_n_2, start_point, end_point, axes_dtw, show_dtw_path);   
     end    
     
 function table_beats_checked(src, eventdata)
@@ -1102,18 +1074,11 @@ function pushbutton36_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on button press in pushbutton_dtw_update.
-function pushbutton_dtw_update_Callback(hObject, eventdata, handles)
-    global hand_3d;
-    
-    value_left = get(hand_3d.menu_left,'value');
-    value_right = get(hand_3d.menu_right,'value');
-    if (value_left == 9)
-        draw(value_left, 0);
-    end
-    if (value_right == 9)
-        draw(0, value_right);
-    end
+% --- Executes on button press in pushbutton37.
+function pushbutton37_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton37 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
 
 
 
@@ -1146,22 +1111,19 @@ function pushbutton38_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes on selection change in popupmenu_dtw_ax.
-function popupmenu_dtw_ax_Callback(hObject, eventdata, handles)
-    global hand_3d;
-    
-    value_left = get(hand_3d.menu_left,'value');
-    value_right = get(hand_3d.menu_right,'value');
-    if (value_left == 9)
-        draw(value_left, 0);
-    end
-    if (value_right == 9)
-        draw(0, value_right);
-    end
+% --- Executes on selection change in popupmenu17.
+function popupmenu17_Callback(hObject, eventdata, handles)
+% hObject    handle to popupmenu17 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns popupmenu17 contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from popupmenu17
+
 
 % --- Executes during object creation, after setting all properties.
-function popupmenu_dtw_ax_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to popupmenu_dtw_ax (see GCBO)
+function popupmenu17_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to popupmenu17 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1174,13 +1136,8 @@ end
 
 % --- Executes on button press in checkbox_path.
 function checkbox_path_Callback(hObject, eventdata, handles)
-    global hand_3d;
-    
-    value_left = get(hand_3d.menu_left,'value');
-    value_right = get(hand_3d.menu_right,'value');
-    if (value_left == 9)
-        draw(value_left, 0);
-    end
-    if (value_right == 9)
-        draw(0, value_right);
-    end
+% hObject    handle to checkbox_path (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of checkbox_path
