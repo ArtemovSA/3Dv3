@@ -57,7 +57,9 @@ end
     plot(handle_n_time, normal_points(:,2),'go-','LineWidth',2);
     plot(handle_n_time, normal_points(:,3),'bo-','LineWidth',2);
     legend(handle_n_time, 'X','Y','Z');
-    
+    [pind,xs,ys] = selectdata(''sel','br'');
+
+    Diaplay(pins);
     point_A = normal_points(1,:);
     
 for i = 2:count-1 

@@ -76,16 +76,6 @@ while ((n+m)~=2)
     k=k+1;
     w=[m n; w]; % this replace the above sentence. 
 end
-
-
-switch (version)
-    case '2D'
-    rw=r(w(:,1));
-    tw=t(w(:,2));
-    case '3D'
-    rw=0;
-    tw=0;
-end;
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if pflag

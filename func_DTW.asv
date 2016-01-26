@@ -6,7 +6,7 @@
 %num_beat_1 - beat number
 %num_beat_2 - beat number
 %start_point, end_point - start and end point in matrix XYZ
-%axes_dtw - 'M','X','Y','Z'
+%axes_dtw - 'M','X','Y','Z','3D'
 %show_path - 1, 0
 %*****Output varibles:*****
 %Dist - unnormalized distance between t and r
@@ -17,28 +17,40 @@
 %tw - the warped t vector
 %**************************************************************************
 
-function [Dist,D,k,w,rw,tw] = func_DTW_3D(handle_in, XYZ, num_beat_1, num_beat_2, start_point, end_point, axes_dtw, show_path)
+function [Dist,D,k,w,rw,tw] = func_DTW(handle_in, handle_path, XYZ, num_beat_1, num_beat_2, start_point, end_point, axes_dtw, show_path)
 
 switch (axes_dtw)
     case 'M'
         sign_1 = ((XYZ(num_beat_1,start_point:end_point,1)).^2 + (XYZ(num_beat_1,start_point:end_point,2)).^2 + (XYZ(num_beat_1,start_point:end_point,3)).^2).^(0.5);
         sign_2 = ((XYZ(num_beat_2,start_point:end_point,1)).^2 + (XYZ(num_beat_2,start_point:end_point,2)).^2 + (XYZ(num_beat_2,start_point:end_point,3)).^2).^(0.5);
+        [Dist,D,k,w,rw,tw] = dtw(sign_1,sign_2, show_path,'2D');
+        % warped waves
+        rw=r(w(:,1));
+        tw=t(w(:,2));
     case 'X'
         sign_1 = XYZ(num_beat_1,start_point:end_point,1);
         sign_2 = XYZ(num_beat_2,start_point:end_point,1);
+        [Dist,D,k,w,rw,tw] = dtw(sign_1,sign_2, show_path,'2D');
     case 'Y'
         sign_1 = XYZ(num_beat_1,start_point:end_point,2);
-        sign_2 = XYZ(num_beat_2,start_point:end_point,2);            
+        sign_2 = XYZ(num_beat_2,start_point:end_point,2);   
+        [Dist,D,k,w,rw,tw] = dtw(sign_1,sign_2, show_path,'2D');
     case 'Z'
         sign_1 = XYZ(num_beat_1,start_point:end_point,3);
         sign_2 = XYZ(num_beat_2,start_point:end_point,3);
+        [Dist,D,k,w,rw,tw] = dtw(sign_1,sign_2, show_path,'2D');
+    case '3D'
+        sign_1 = XYZ(num_beat_1,start_point:end_point,:);
+        sign_2 = XYZ(num_beat_2,start_point:end_point,:);
+        [Dist,D,k,w,rw,tw] = dtw(sign_1,sign_2, show_path,'3D');
 end;
-
-[Dist,D,k,w,rw,tw] = dtw(sign_1,sign_2, show_path);
 
 hold(handle_in, 'on');
 plot3(handle_in, XYZ(num_beat_1,start_point:end_point,1),XYZ(num_beat_1,start_point:end_point,2),XYZ(num_beat_1,start_point:end_point,3),'color','r','Linewidth',2);
 plot3(handle_in, XYZ(num_beat_2,start_point:end_point,1),XYZ(num_beat_2,start_point:end_point,2),XYZ(num_beat_2,start_point:end_point,3),'color','k','Linewidth',2);
+
+colormap(handle_path,'hot');
+imagesc(D,'Parent',handle_path);
 
 for (i = 1:k)
     point_dwp_1 = start_point + w(i,1);

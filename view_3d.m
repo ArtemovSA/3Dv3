@@ -22,7 +22,7 @@ function varargout = view_3d(varargin)
 
 % Edit the above text to modify the response to help view_3d
 
-% Last Modified by GUIDE v2.5 17-Jan-2016 22:28:33
+% Last Modified by GUIDE v2.5 20-Jan-2016 16:47:37
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -103,6 +103,7 @@ function init
     global values_width;
     global values_line_style;
     global values_markers;
+    global Rotate_en;
     
     %Set window in full screen
     full_screen;
@@ -120,6 +121,7 @@ function init
     view(hand_3d.axes_left,-60,60);
     
     % Register Callbacks
+    Rotate_en = 1;
     axes_right_rotate = rotate3d(hand_3d.axes_left);
     set(axes_right_rotate,'ActionPostCallback',@sync_rotate_right);
     set(axes_right_rotate,'ActionPreCallback',@sync_rotate_right);
@@ -216,6 +218,10 @@ Numbers:
 %}
     global hand_3d;
     global main_val;
+    global Rotate_en;
+
+    Rotate_en = 1;
+    axis(hand_3d.axes_left, 'auto');
     
     if (left_graph ~= 0)
         cla(hand_3d.axes_left); 
@@ -293,12 +299,15 @@ Numbers:
             [Err,N,P] = func_fit_3D_data(hand_3d.axes_left, main_val.XYZ_win(beat_n,start_point:end_point,1), main_val.XYZ_win(beat_n,start_point:end_point,2), main_val.XYZ_win(beat_n,start_point:end_point,3), approx_type, 'on', 'on');
             set(hand_3d.edit_error,'String',num2str(Err));
         case 8 %Sphere n_vector
+            Rotate_en = 0;
             step = str2num(get(hand_3d.edit_step,'string'));
             beat_n = str2num(get(hand_3d.edit_beat_n,'string'));
             win_size = str2num(get(hand_3d.edit_window,'string'));
             start_point = main_val.left_pos;
             end_point = main_val.right_pos;
-            [normal,Err] = func_sphere_normal_vector(hand_3d.axes_left ,main_val.XYZ_win, beat_n, step, win_size, start_point, end_point, 'off','on');
+            [normal,Err] = func_sphere_normal_vector(hand_3d.axes_left, hand_3d.axes_right ,main_val.XYZ_win, beat_n, step, win_size, start_point, end_point, 'off','on');
+            %[pind,xs,ys] = selectdata('sel','br');
+            %display(xs);
         case 9 %DTW
             beat_n_1 = str2num(get(hand_3d.edit_beat_1,'string'));
             beat_n_2 = str2num(get(hand_3d.edit_beat_2,'string'));
@@ -313,9 +322,11 @@ Numbers:
                     axes_dtw = 'Z';
                 case 4
                     axes_dtw = 'M';
+                case 5
+                    axes_dtw = '3D';
             end
             show_dtw_path = get(hand_3d.checkbox_path,'value');
-            func_DTW_3D(hand_3d.axes_left, main_val.XYZ_win, beat_n_1, beat_n_2, start_point, end_point, axes_dtw, show_dtw_path);
+            func_DTW(hand_3d.axes_left, hand_3d.axes_right, main_val.XYZ_win, beat_n_1, beat_n_2, start_point, end_point, axes_dtw, show_dtw_path);
     end
             
     %Right draw
@@ -385,14 +396,7 @@ Numbers:
             end
             [Err,N,P] = func_fit_3D_data(hand_3d.axes_right, main_val.XYZ_win(beat_n,start_point:end_point,1), main_val.XYZ_win(beat_n,start_point:end_point,2), main_val.XYZ_win(beat_n,start_point:end_point,3), approx_type, 'on', 'on');
             set(hand_3d.edit_error,'String',num2str(Err));
-        case 8 %Sphere n_vector
-            step = str2num(get(hand_3d.edit_step,'string'));
-            beat_n = str2num(get(hand_3d.edit_beat_n,'string'));
-            win_size = str2num(get(hand_3d.edit_window,'string'));
-            start_point = main_val.left_pos;
-            end_point = main_val.right_pos;
-            [normal,Err] = func_sphere_normal_vector(hand_3d.axes_right ,main_val.XYZ_win, beat_n, step, win_size, start_point, end_point, 'off','on');
-        case 9 %DTW
+        case 8 %DTW
             beat_n_1 = str2num(get(hand_3d.edit_beat_1,'string'));
             beat_n_2 = str2num(get(hand_3d.edit_beat_2,'string'));
             start_point = main_val.left_pos;
@@ -445,9 +449,12 @@ function draw_loop_part (handle_in,num, part_line_style_in)
              
 function sync_rotate_right(obj,evd)
     global hand_3d;
+    global Rotate_en;
     
-    newView = get(hand_3d.axes_left,'View'); % Get view property of the plot that changed
-    set(hand_3d.axes_right, 'View', newView); % Synchronize View property of both plots   
+    if (Rotate_en == 1)
+        newView = get(hand_3d.axes_left,'View'); % Get view property of the plot that changed
+        set(hand_3d.axes_right, 'View', newView); % Synchronize View property of both plots  
+    end;
     
 % --- Executes on button press in pushbutton5.
 function pushbutton5_Callback(hObject, eventdata, handles)
@@ -624,6 +631,9 @@ function pushbutton_update_vector_Callback(hObject, eventdata, handles)
     end
     if (value_right == 3)
         draw(0, value_right);
+    end
+    if (value_left == 8)
+        draw(value_left, 0);
     end
 
 function edit_save_Callback(hObject, eventdata, handles)
@@ -1184,3 +1194,10 @@ function checkbox_path_Callback(hObject, eventdata, handles)
     if (value_right == 9)
         draw(0, value_right);
     end
+
+
+% --- Executes on mouse press over axes background.
+function axes_right_ButtonDownFcn(hObject, eventdata, handles)
+% hObject    handle to axes_right (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
